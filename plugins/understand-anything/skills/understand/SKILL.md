@@ -72,25 +72,26 @@ Determine whether to run a full analysis or incremental update.
      Set `UNDERSTAND_NO_WORKTREE_REDIRECT=1` if you intentionally want a per-worktree graph (rare — most users want the redirect).
 1.5. **Ensure the plugin is built.** Later phases invoke Node scripts that import `@understand-anything/core`. On a fresh install `packages/core/dist/` does not exist yet — build once.
 
-   **Important:** do **not** assume the plugin root is simply two directories above the skill path string. In many installations `~/.agents/skills/understand` is a symlink into the real plugin checkout. Prefer runtime-provided plugin roots first (for Claude), then fall back to universal symlinks, skill symlink resolution, and common clone-based install paths.
+   **Important:** the plugin root is the directory two levels above this loaded skill folder (`skills/understand/`). Codex installs the full plugin tree under `~/.codex/plugins/cache/understand-anything-cdx/understand-anything/<version>/`, so derive the root from `SKILL_DIR` first, then fall back to the Codex install cache and other common locations.
 
    Resolve the plugin root like this:
 
    ```bash
-   SKILL_REAL=$(realpath ~/.agents/skills/understand 2>/dev/null || readlink -f ~/.agents/skills/understand 2>/dev/null || echo "")
-   SELF_RELATIVE=$([ -n "$SKILL_REAL" ] && cd "$SKILL_REAL/../.." 2>/dev/null && pwd || echo "")
-   COPILOT_SKILL_REAL=$(realpath ~/.copilot/skills/understand 2>/dev/null || readlink -f ~/.copilot/skills/understand 2>/dev/null || echo "")
-   COPILOT_SELF_RELATIVE=$([ -n "$COPILOT_SKILL_REAL" ] && cd "$COPILOT_SKILL_REAL/../.." 2>/dev/null && pwd || echo "")
+   # Codex provides the absolute path of this loaded skill folder when the skill runs.
+   # Set SKILL_DIR to that path — the directory that contains this SKILL.md.
+   #   e.g. ~/.codex/plugins/cache/understand-anything-cdx/understand-anything/<version>/skills/understand
+   SKILL_DIR="<absolute path to this loaded skill folder>"
+   SELF_FROM_SKILLDIR=$([ -n "$SKILL_DIR" ] && cd "$SKILL_DIR/../.." 2>/dev/null && pwd || echo "")
+
+   # Probe the Codex install cache (full plugin tree is materialized there); pick the newest version.
+   CODEX_CACHE_ROOT=$(ls -d "$HOME"/.codex/plugins/cache/*/understand-anything/*/ 2>/dev/null | sort -V | tail -1)
 
    PLUGIN_ROOT=""
    for candidate in \
+     "$SELF_FROM_SKILLDIR" \
+     "$CODEX_CACHE_ROOT" \
+     "${CODEX_PLUGIN_ROOT}" \
      "${CLAUDE_PLUGIN_ROOT}" \
-     "$HOME/.understand-anything-plugin" \
-     "$SELF_RELATIVE" \
-     "$COPILOT_SELF_RELATIVE" \
-     "$HOME/.codex/understand-anything/understand-anything-plugin" \
-     "$HOME/.opencode/understand-anything/understand-anything-plugin" \
-     "$HOME/.pi/understand-anything/understand-anything-plugin" \
      "$HOME/understand-anything/understand-anything-plugin"; do
      if [ -n "$candidate" ] && [ -f "$candidate/package.json" ] && [ -f "$candidate/pnpm-workspace.yaml" ]; then
        PLUGIN_ROOT="$candidate"
@@ -100,25 +101,17 @@ Determine whether to run a full analysis or incremental update.
 
    if [ -z "$PLUGIN_ROOT" ]; then
      echo "Error: Cannot find the understand-anything plugin root."
-     echo "Checked:"
-     echo "  - ${CLAUDE_PLUGIN_ROOT:-<unset CLAUDE_PLUGIN_ROOT>}"
-     echo "  - $HOME/.understand-anything-plugin"
-     echo "  - ${SELF_RELATIVE:-<unresolved path derived from ~/.agents/skills/understand>}"
-     echo "  - ${COPILOT_SELF_RELATIVE:-<unresolved path derived from ~/.copilot/skills/understand>}"
-     echo "  - $HOME/.codex/understand-anything/understand-anything-plugin"
-     echo "  - $HOME/.opencode/understand-anything/understand-anything-plugin"
-     echo "  - $HOME/.pi/understand-anything/understand-anything-plugin"
-     echo "  - $HOME/understand-anything/understand-anything-plugin"
-     echo "Make sure the plugin is installed correctly."
+     echo "Checked the SKILL_DIR-derived path, the Codex plugin cache (~/.codex/plugins/cache/...), CODEX_PLUGIN_ROOT, CLAUDE_PLUGIN_ROOT, and ~/understand-anything/understand-anything-plugin."
+     echo "Make sure the plugin is installed: codex plugin add understand-anything@understand-anything-cdx"
      exit 1
    fi
 
    if [ ! -f "$PLUGIN_ROOT/packages/core/dist/index.js" ]; then
-     cd "$PLUGIN_ROOT" && (pnpm install --frozen-lockfile 2>/dev/null || pnpm install) && pnpm --filter @understand-anything/core build
+     cd "$PLUGIN_ROOT" && (npx --yes pnpm@10 install --frozen-lockfile 2>/dev/null || npx --yes pnpm@10 install) && npx --yes pnpm@10 --filter @understand-anything/core build
    fi
    ```
 
-   If `pnpm` is missing, report to the user: "Install Node.js ≥ 22 and pnpm ≥ 10, then re-run `/understand`."
+   The build uses `npx pnpm`, so only **Node.js ≥ 22** is required (pnpm is fetched automatically). If `node`/`npx` is missing, report to the user: "Install Node.js ≥ 22, then re-run `/understand`."
 
 2. Get the current git commit hash:
    ```bash

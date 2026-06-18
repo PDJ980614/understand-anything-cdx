@@ -42,25 +42,25 @@ fi
 
 Use `$PROJECT_ROOT` (not the bare CWD) for every reference to "the current project" / `<project-root>` in subsequent phases.
 
-**Important:** do **not** assume the plugin root is simply two directories above the skill path string. In many installations `~/.agents/skills/understand-domain` is a symlink into the real plugin checkout. Prefer runtime-provided plugin roots first (for Claude), then fall back to universal symlinks, skill symlink resolution, and common clone-based install paths.
+**Important:** the plugin root is the directory two levels above this loaded skill folder (`skills/understand-domain/`). Codex installs the full plugin tree under `~/.codex/plugins/cache/understand-anything-cdx/understand-anything/<version>/`, so derive the root from `SKILL_DIR` first, then fall back to the Codex install cache and other common locations.
 
 Resolve the plugin root like this:
 
 ```bash
-SKILL_REAL=$(realpath ~/.agents/skills/understand-domain 2>/dev/null || readlink -f ~/.agents/skills/understand-domain 2>/dev/null || echo "")
-SELF_RELATIVE=$([ -n "$SKILL_REAL" ] && cd "$SKILL_REAL/../.." 2>/dev/null && pwd || echo "")
-COPILOT_SKILL_REAL=$(realpath ~/.copilot/skills/understand-domain 2>/dev/null || readlink -f ~/.copilot/skills/understand-domain 2>/dev/null || echo "")
-COPILOT_SELF_RELATIVE=$([ -n "$COPILOT_SKILL_REAL" ] && cd "$COPILOT_SKILL_REAL/../.." 2>/dev/null && pwd || echo "")
+# Codex provides the absolute path of this loaded skill folder when the skill runs.
+# Set SKILL_DIR to that path — the directory that contains this SKILL.md.
+SKILL_DIR="<absolute path to this loaded skill folder>"
+SELF_FROM_SKILLDIR=$([ -n "$SKILL_DIR" ] && cd "$SKILL_DIR/../.." 2>/dev/null && pwd || echo "")
+
+# Probe the Codex install cache (full plugin tree is materialized there); pick the newest version.
+CODEX_CACHE_ROOT=$(ls -d "$HOME"/.codex/plugins/cache/*/understand-anything/*/ 2>/dev/null | sort -V | tail -1)
 
 PLUGIN_ROOT=""
 for candidate in \
+  "$SELF_FROM_SKILLDIR" \
+  "$CODEX_CACHE_ROOT" \
+  "${CODEX_PLUGIN_ROOT}" \
   "${CLAUDE_PLUGIN_ROOT}" \
-  "$HOME/.understand-anything-plugin" \
-  "$SELF_RELATIVE" \
-  "$COPILOT_SELF_RELATIVE" \
-  "$HOME/.codex/understand-anything/understand-anything-plugin" \
-  "$HOME/.opencode/understand-anything/understand-anything-plugin" \
-  "$HOME/.pi/understand-anything/understand-anything-plugin" \
   "$HOME/understand-anything/understand-anything-plugin"; do
   if [ -n "$candidate" ] && [ -f "$candidate/package.json" ] && [ -f "$candidate/pnpm-workspace.yaml" ]; then
     PLUGIN_ROOT="$candidate"
@@ -70,16 +70,8 @@ done
 
 if [ -z "$PLUGIN_ROOT" ]; then
   echo "Error: Cannot find the understand-anything plugin root."
-  echo "Checked:"
-  echo "  - ${CLAUDE_PLUGIN_ROOT:-<unset CLAUDE_PLUGIN_ROOT>}"
-  echo "  - $HOME/.understand-anything-plugin"
-  echo "  - ${SELF_RELATIVE:-<unresolved path derived from ~/.agents/skills/understand-domain>}"
-  echo "  - ${COPILOT_SELF_RELATIVE:-<unresolved path derived from ~/.copilot/skills/understand-domain>}"
-  echo "  - $HOME/.codex/understand-anything/understand-anything-plugin"
-  echo "  - $HOME/.opencode/understand-anything/understand-anything-plugin"
-  echo "  - $HOME/.pi/understand-anything/understand-anything-plugin"
-  echo "  - $HOME/understand-anything/understand-anything-plugin"
-  echo "Make sure the plugin is installed correctly."
+  echo "Checked the SKILL_DIR-derived path, the Codex plugin cache (~/.codex/plugins/cache/...), CODEX_PLUGIN_ROOT, CLAUDE_PLUGIN_ROOT, and ~/understand-anything/understand-anything-plugin."
+  echo "Make sure the plugin is installed: codex plugin add understand-anything@understand-anything-cdx"
   exit 1
 fi
 ```
