@@ -1,0 +1,18 @@
+{
+  "name": "understand-anything-cdx",
+  "description": "Codex-native port of Understand-Anything — analyze, visualize, and explain any codebase as an interactive knowledge graph. Based on Egonex-AI/Understand-Anything (MIT).",
+  "version": "0.1.0",
+  "author": {
+    "name": "PDJ980614"
+  },
+  "homepage": "https://github.com/PDJ980614/understand-anything-cdx",
+  "repository": "https://github.com/PDJ980614/understand-anything-cdx",
+  "license": "MIT",
+  "keywords": [
+    "codebase-analysis",
+    "knowledge-graph",
+    "architecture",
+    "onboarding",
+    "codex"
+  ]
+}

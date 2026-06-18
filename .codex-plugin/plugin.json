@@ -1,0 +1,32 @@
+{
+  "name": "understand-anything-cdx",
+  "version": "0.1.0",
+  "description": "Codex-native port of Understand-Anything — analyze, visualize, and explain any codebase as an interactive knowledge graph.",
+  "author": {
+    "name": "PDJ980614"
+  },
+  "homepage": "https://github.com/PDJ980614/understand-anything-cdx",
+  "repository": "https://github.com/PDJ980614/understand-anything-cdx",
+  "license": "MIT",
+  "keywords": [
+    "codebase-analysis",
+    "knowledge-graph",
+    "architecture",
+    "onboarding",
+    "codex"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Understand Anything (Codex)",
+    "shortDescription": "Analyze any codebase into an interactive knowledge graph, tours, and onboarding guides.",
+    "longDescription": "Codex CLI port of Understand-Anything. Produces a knowledge-graph.json from any codebase via parallel multi-agent analysis, then powers an interactive dashboard, guided tours, diff analysis, domain extraction, and onboarding guides. Originally created by Egonex-AI (MIT); this is a Codex-harness adaptation.",
+    "developerName": "PDJ980614",
+    "category": "Developer Tools",
+    "capabilities": ["Read", "Write"],
+    "defaultPrompt": [
+      "Use the understand skill to analyze this codebase into a knowledge graph.",
+      "Use the understand-onboard skill to generate an onboarding guide for this project.",
+      "Use the understand-explain skill to deep-dive a specific file or module."
+    ]
+  }
+}
