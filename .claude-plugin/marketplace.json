@@ -10,7 +10,7 @@
   },
   "plugins": [
     {
-      "name": "understand-anything-cdx",
+      "name": "understand-anything",
       "source": "./",
       "description": "Analyze, visualize, and explain any codebase as an interactive knowledge graph — Codex CLI port of Understand-Anything.",
       "version": "0.1.0",

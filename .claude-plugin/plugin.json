@@ -1,5 +1,5 @@
 {
-  "name": "understand-anything-cdx",
+  "name": "understand-anything",
   "description": "Codex-native port of Understand-Anything — analyze, visualize, and explain any codebase as an interactive knowledge graph. Based on Egonex-AI/Understand-Anything (MIT).",
   "version": "0.1.0",
   "author": {
